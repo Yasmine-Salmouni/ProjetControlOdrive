@@ -13,9 +13,11 @@
      direction(DirectionMode::FORWARD),
      controlMode(ControlMode::CADENCE),
      instruction(0.0f),
-     linearGain(defaultLinearGain)
+     linearGain(defaultLinearGain),
+     torqueConstant(0.05f)
  {
      screen = new ScreenDisplay(screen_uart);
+     vesc = new VESCInterface(control_uart);
  }
  //Par défaut le moteur est en modes forward et cadence avec une vitesse nulle
  
@@ -48,18 +50,28 @@
      }
  }
  
- void MotorController::setLinearGain(float gain) {
+ void MotorController::setLinearGain(float gain)  
+ {
      linearGain = gain;
  }
- 
- void MotorController::setCadence(float rpm, float rampRate) {
-     float value = applyDirection(rpm);
-     sendCommand("v 0 %.2f\n", value);
+
+ void MotorController::settorqueConstant(float torque)  
+ {
+    torqueConstant = torque;
  }
  
- void MotorController::setTorque(float torque, float rampRate) {
+ void MotorController::setCadence(float rpm, float rampRate) //Implémenter une version avec rampRate
+ {
+     float value = applyDirection(rpm);
+     //sendCommand("v 0 %.2f\n", value);
+     vesc->setRPM(value);
+ }
+ 
+ void MotorController::setTorque(float torque, float rampRate) //Implementer une version avec rampRate
+ {
      float value = applyDirection(torque);
-     sendCommand("c 0 %.2f\n", value);
+     //sendCommand("c 0 %.2f\n", value);
+     vesc->setCurrent(value);
  }
  
  float MotorController::getCadence() {

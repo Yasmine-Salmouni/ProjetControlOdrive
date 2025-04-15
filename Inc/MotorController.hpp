@@ -16,6 +16,7 @@
  #include <cmath>
  
  #include "ScreenDisplay.hpp"
+ #include "VESCInterface.hpp"
  
  enum class DirectionMode {
      FORWARD,
@@ -35,19 +36,20 @@
      MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float defaultLinearGain = 0.05f);
  
      void setDirection(DirectionMode dir);
-     void stop();
+     void MotorController::stop(float rampRate = 6.0f);
  
-     void setTorque(float torque, float rampRate = 6.0f);
-     void setCadence(float rpm, float rampRate = 6.0f);
+     void setTorque(float torque, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
+     void setCadence(float rpm, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
  
      float getCadence();
-     void setPowerConcentric(float power, float rampRate = 6.0f);
-     void setPowerEccentric(float power, float rampRate = 6.0f);
+     void setPowerConcentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
+     void setPowerEccentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
      void setLinear(float gain, float cadence);
  
      void setControlMode(ControlMode mode);
      void setInstruction(float value);
      void setLinearGain(float gain);
+     void settorqueConstant(float torque);
      void update(float measured_cadence);  // à appeler à chaque boucle, ex: toutes les 100ms
  
  private:
@@ -58,12 +60,15 @@
      ControlMode controlMode;
      float instruction; //la valeur cible que l’on veut imposer au moteur, en fonction du mode actif.
      float linearGain;  //Pour le mode linéaire
+     float torqueConstant;  // Nm/A
+     float lastAppliedCurrent;
+
  
      char rx_buffer[32];  // tampon pour lire les réponses UART
  
      ScreenDisplay* screen;
+     VESCInterface* vesc;
  
-     void sendCommand(const char* format, ...);
      float applyDirection(float value);
  };
  
