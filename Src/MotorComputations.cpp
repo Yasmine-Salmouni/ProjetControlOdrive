@@ -22,5 +22,6 @@ float MotorComputations::computePower(float torque, float cadence_rpm) const {
 
 void MotorComputations::setTorqueConstant(float value) {
     torqueConstant = value;
-}
 
+}
+   
