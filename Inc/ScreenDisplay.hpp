@@ -13,7 +13,8 @@
  #include <cstring>
  #include <cstdio>
  #include <cstdint>
- 
+
+ #include "MotorController.hpp"
  
  /**
   * @brief Classe pour gérer la communication avec un écran Nextion via UART
@@ -30,11 +31,20 @@
      void showTorque(float torque);
      void showPower(float power);
      void showMode(const char* modeName);
+     void showGain(float LinearGain);
+     void showDutyCycle(float duty);
  
      // Affichage de messages statiques
      void showError(const char* message);
      void showWelcome();
      void clearScreen();
+
+     int32_t readInt32();
+     float getUserCadence();
+     float getUserPower();
+     float getUserTorque();
+     ControlMode getMode();
+     float getUserLinearGain();
  
  private:
      UART_HandleTypeDef* ecran_uart;
@@ -43,6 +53,7 @@
      void sendCommand(const char* cmd);
      void sendText(const char* component, const char* message);
      void sendValue(const char* component, float value, const char* format = "%.1f");
+
  };
  
  

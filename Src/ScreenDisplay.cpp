@@ -52,6 +52,10 @@
  void ScreenDisplay::showMode(const char* modeName) {
      sendText("mode", modeName);  // champ texte nommé "mode"
  }
+
+ void ScreenDisplay::showGain(float LinearGain) {
+    sendValue("gain", LinearGain);  // champ texte nommé "gain"
+}
  
  void ScreenDisplay::showError(const char* message) {
      sendText("err", message);  // champ texte nommé "err"
@@ -65,8 +69,66 @@
      sendCommand("cls BLACK");  // Efface l'écran
  }
  
- 
- 
+ int32_t ScreenDisplay::readInt32() 
+ {
+    uint8_t response[8]; //On crée un tableau pour recevoir jusqu’à 8 octets en provenance de l’écran Nextion, via l’UART
+
+    //La réponse ressemble à ça: 0x71 [val0] [val1] [val2] [val3] 0xFF 0xFF 0xFF avec de val0 à val3 le message qui nous interesse cdé en little indian
+    if (HAL_UART_Receive(ecran_uart, response, 8, 100) != HAL_OK) {
+        return -1;
+    }
+
+    if (response[0] != 0x71) return -1;  
+
+    int32_t value = (response[1]) |
+                    (response[2] << 8) |
+                    (response[3] << 16) |
+                    (response[4] << 24);
+    //response[1] = octet le moins significatif (LSB)
+    //response[4] = octet le plus significatif (MSB)
+
+    return value;
+}
+
+ float ScreenDisplay::getUserCadence() {
+    sendCommand("get cad.val");  // cad : champ de cadence
+    int32_t value = readInt32();
+    return static_cast<float>(value);  // en tr/min
+}
+
+float ScreenDisplay::getUserPower() {
+    sendCommand("get pow.val");  // pow : champ de puissance
+    int32_t value = readInt32();
+    return static_cast<float>(value);  // en watts
+}
+
+float ScreenDisplay::getUserTorque() {
+    sendCommand("get tor.val");  // tor : champ de couple
+    int32_t value = readInt32();
+    return static_cast<float>(value);  // en Nm
+}
+
+ControlMode ScreenDisplay::getMode() {
+    sendCommand("get mode.val");  // Lire la valeur du composant 'mode'
+    int32_t value = readInt32();
+
+    switch (value) {
+        case 0: return ControlMode::CADENCE;
+        case 1: return ControlMode::TORQUE;
+        case 2: return ControlMode::POWER_CONCENTRIC;
+        case 3: return ControlMode::POWER_ECCENTRIC;
+        case 4: return ControlMode::LINEAR;
+        default: return ControlMode::CADENCE;  // valeur par défaut si erreur
+    }
+}
+
+float ScreenDisplay::getUserLinearGain() {
+    sendCommand("get gain.val");  // Demande à l’écran la valeur du champ gain
+    int32_t value = readInt32();  // Lit la réponse binaire (format Nextion)
+
+    return static_cast<float>(value);  // Conversionenfloat
+}
+
  
  
  

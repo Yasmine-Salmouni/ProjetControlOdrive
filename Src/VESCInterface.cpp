@@ -126,10 +126,6 @@ float VESCInterface::getDutyCycle() {
     uDuty.b[2] = ptr[2];
     uDuty.b[3] = ptr[3];
 
-    if (uDuty.b > 0.95f) 
-    {
-        screen->sendText("t0", "ALERTE: Duty élevé !");
-    }
     return uDuty.f;  // entre -1.0 et 1.0
 }
 
