@@ -6,6 +6,7 @@
  */
 
  #include "../Inc/MotorController.hpp"
+ #include "../Inc/main.h"
 
  MotorController::MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float torquecst)
      : control_uart(controlUart),
@@ -333,6 +334,12 @@ void MotorController::updateFromScreen()
     {
         stop(3.0f);  // Stop progressif avec rampRate = 3 A/s (à adapter si besoin)
     }
+    
+    if (screen->getCalibrateRequest()) 
+    {
+        calibrateTorqueConstant();
+    }
+    
 }
 
 void MotorController::updateScreen() {
@@ -350,4 +357,25 @@ void MotorController::updateScreen() {
     screen->showPower(power);
     screen->showDutyCycle(dutyCycle);
     screen->showMode(mode);
+}
+
+void MotorController::calibrateTorqueConstant() {
+    const float testCurrent = 5.0f;  // Appliquer 5 A
+    vesc->setCurrent(testCurrent);
+
+    HAL_Delay(1000);  // Attente pour stabilisation (1 sec)
+
+    float measuredTorque = getTorque();  
+
+    vesc->setCurrent(0.0f);  // Sécurité : stop après mesure
+
+    if (measuredTorque <= 0.0f) {
+        screen->showError("Erreur: pas de couple");
+        return;
+    }
+
+    float newKt = measuredTorque / testCurrent; //simple calcule a partir des valeurs mesurées
+    settorqueConstant(newKt);  
+
+    screen->sendValue("calib_stat", newKt, "Kt=%.3f Nm/A"); //configurer calib_stat
 }

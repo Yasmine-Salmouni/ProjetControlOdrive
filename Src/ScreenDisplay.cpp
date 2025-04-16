@@ -150,4 +150,9 @@ DirectionMode ScreenDisplay::getDirection() {
     return (value == 1) ? DirectionMode::REVERSE : DirectionMode::FORWARD;
 }
 
- 
+bool ScreenDisplay::getCalibrateRequest() {
+    sendCommand("get btn_calib.val");  // Lire l'état du bouton calibration btn_calib
+    int32_t value = readInt32();
+    return (value == 1);  // 1 = pressé
+    //configurer calib_state aussi
+}
