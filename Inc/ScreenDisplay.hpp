@@ -44,7 +44,7 @@
      ControlMode getMode();
      float getUserLinearGain();
      bool getStop();
-     bool getCalibrateRequest();
+     bool getCalibrateRequest(); 
  
  private:
      UART_HandleTypeDef* ecran_uart;
