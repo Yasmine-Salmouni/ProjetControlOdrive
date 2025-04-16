@@ -68,7 +68,7 @@
      ControlMode controlMode;
      float instruction; //la valeur cible que l’on veut imposer au moteur, en fonction du mode actif.
      float linearGain;  //Pour le mode linéaire
-     //float torqueConstant;  // Nm/A
+     float torqueConstant;  // Nm/A
      float lastAppliedCurrent;
      float ramp;
 
