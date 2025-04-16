@@ -7,16 +7,17 @@
 
  #include "../Inc/MotorController.hpp"
 
- MotorController::MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float defaultLinearGain, float rampRate)
+ MotorController::MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float torquecst)
      : control_uart(controlUart),
      screen_uart(screenUart),
      direction(DirectionMode::FORWARD),
      controlMode(ControlMode::CADENCE),
      instruction(0.0f),
-     linearGain(defaultLinearGain),
-     torqueConstant(0.05f),
+     linearGain(0.05f),
      lastAppliedCurrent(0.0f),
-     ramp(rampRate)
+     ramp(6.0f),
+     torqueConstant(torquecst),
+     computations(torquecst)
  {
      screen = new ScreenDisplay(screen_uart);
      vesc = new VESCInterface(control_uart);
@@ -57,9 +58,16 @@
      linearGain = gain;
  }
 
- void MotorController::settorqueConstant(float torque)  
+ void MotorController::settorqueConstant(float torquecst)  
  {
-    torqueConstant = torque;
+    torqueConstant = torquecst;
+    computations.setTorqueConstant(torquecst); 
+
+ }
+
+ void MotorController::setrampRate(float rampRate)
+ {
+    ramp = rampRate;
  }
  
  void MotorController::setCadence(float rpm, float rampRate) //Implémenter une version avec rampRate
@@ -71,10 +79,8 @@
  
  void MotorController::setTorque(float torque, float rampRate) //Implementer une version avec rampRate
  {
-     float value = applyDirection(torque);
-     float current = value / torqueConstant;
-     lastAppliedCurrent = current;
-     //sendCommand("c 0 %.2f\n", value);
+     float effectiveTorque = applyDirection(torque);
+     float current = computations.computeCurrentFromTorque(effectiveTorque);
      vesc->setCurrent(current);
  }
  
@@ -99,7 +105,7 @@
         return -1.0f;  // Erreur de lecture
     }
 
-    float torque = current * torqueConstant;
+    float torque = computations.computeTorqueFromCurrent(current);
     return applyDirection(torque);  // Respecte le sens FORWARD/REVERSE
 }
 
@@ -136,13 +142,18 @@ float MotorController::getPower() {
     }
 
     // Conversion cadence → vitesse angulaire ω (rad/s)
-    float omega = cadence * 2.0f * M_PI / 60.0f;
+    float omega = computations.computeOmega(cadence);
 
     // Puissance mécanique P = τ × ω
-    float power = torque * omega;
+    float power = computations.computePower(torque, cadence);
 
     return power;  // En watts signé
 }
+
+ControlMode MotorController::getControlMode() {
+    return controlMode;
+}
+
  
  void MotorController::setPowerConcentric(float power, float rampRate)
  {
@@ -162,16 +173,16 @@ float MotorController::getPower() {
     }
 
     // Conversion cadence (tr/min) → vitesse angulaire ω (rad/s)
-    float omega = cadence * 2.0f * M_PI / 60.0f;
+    float omega = computations.computeOmega(cadence);
 
     // Calcul du couple réel à appliquer : τ = P / ω
     float torque = power / omega;
 
     // Appliquer la direction (FORWARD ou REVERSE)
-    torque = applyDirection(torque);
+    float effectiveTorque = applyDirection(torque);
 
     // Conversion couple → courant moteur : I = τ / Kt
-    float current = torque / torqueConstant;
+    float current = computations.computeCurrentFromTorque(effectiveTorque);
     lastAppliedCurrent = current;
 
     // Envoi de la commande au VESC
@@ -197,16 +208,16 @@ float MotorController::getPower() {
     }
 
     // Conversion cadence → vitesse angulaire ω (rad/s)
-    float omega = cadence * 2.0f * M_PI / 60.0f;
+    float omega = computations.computeOmega(cadence);
 
     // Calcul du couple nécessaire (négatif pour excentrique)
     float torque = -power / omega;
 
     // Applique la direction choisie (FORWARD ou REVERSE)
-    torque = applyDirection(torque);
-
+    effectiveTorque = applyDirection(torque);
+    
     // Conversion couple → courant moteur : I = τ / Kt
-    float current = torque / torqueConstant;
+    float current = computations.computeCurrentFromTorque(effectiveTorque);
     lastAppliedCurrent = current;
 
     // Envoi au VESC
@@ -219,7 +230,7 @@ float MotorController::getPower() {
      float torque = linearGain * cadence;
      float value = applyDirection(torque);
      // Conversion couple → courant : I = τ / Kt
-     float current = torque / torqueConstant;
+     float current = computations.computeCurrentFromTorque(float torque);
      lastAppliedCurrent = current;
 
      // Envoi au VESC
@@ -278,6 +289,9 @@ void MotorController::updateFromScreen()
 {
     if (!screen) return;  // Sécurité : écran non initialisé
 
+    DirectionMode selectedDirection = screen->getDirection();
+    setDirection(selectedDirection);
+    
     ControlMode selectedMode = screen->getMode();
     setControlMode(selectedMode);
 
@@ -328,10 +342,12 @@ void MotorController::updateScreen() {
     float torque  = getTorque();
     float power   = getPower();
     float dutyCycle = getDutyCycle();
+    ControlMode mode = getControlMode();
 
     // Affichage à l’écran
     screen->showCadence(rpm);
     screen->showTorque(torque);
     screen->showPower(power);
     screen->showDutyCycle(dutyCycle);
+    screen->showMode(mode);
 }

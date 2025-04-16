@@ -8,8 +8,6 @@
  #pragma once
  using namespace std;
  
- #include "main.h"
- 
  #include <cstring>
  #include <cstdio>
  #include <cstdint>
@@ -36,8 +34,8 @@
  
      // Affichage de messages statiques
      void showError(const char* message);
-     void showWelcome();
-     void clearScreen();
+     void showWelcome(); //utiliser dans le main
+     void clearScreen(); //utiliser dans le main
 
      int32_t readInt32();
      float getUserCadence();
@@ -45,6 +43,7 @@
      float getUserTorque();
      ControlMode getMode();
      float getUserLinearGain();
+     bool getStop();
  
  private:
      UART_HandleTypeDef* ecran_uart;

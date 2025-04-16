@@ -129,6 +129,25 @@ float ScreenDisplay::getUserLinearGain() {
     return static_cast<float>(value);  // Conversionenfloat
 }
 
- 
- 
+void ScreenDisplay::showDutyCycle(float duty) {
+    // Convertir duty cycle en pourcentage
+    float percent = duty * 100.0f;
+
+    // Affiche sur un champ texte appelé "duty"
+    sendValue("duty", percent, "%.1f");
+}
+
+bool ScreenDisplay::getStop() {
+    sendCommand("get stop.val");     // Demande la valeur du bouton "stop"
+    int32_t value = readInt32();     // Réception du int32
+
+    return (value == 1);             // Retourne vrai si activé
+}
+
+DirectionMode ScreenDisplay::getDirection() {
+    sendCommand("get dir.val");     // dir
+    int32_t value = readInt32();    // Lecture 0 ou 1
+    return (value == 1) ? DirectionMode::REVERSE : DirectionMode::FORWARD;
+}
+
  

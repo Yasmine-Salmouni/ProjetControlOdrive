@@ -4,7 +4,6 @@ using namespace std;
 #include <cstdint>
 #include <cstring>
 
-#include "main.h"
 #include "ScreenDisplay.hpp"
 
 

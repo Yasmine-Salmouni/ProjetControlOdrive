@@ -8,8 +8,6 @@
  #pragma once
  using namespace std;
  
- #include "main.h"
- 
  #include <cstdarg>
  #include <cstdio>
  #include <cstring>
@@ -17,6 +15,7 @@
  
  #include "ScreenDisplay.hpp"
  #include "VESCInterface.hpp"
+ #include "MotorComputations.hpp"
  
  enum class DirectionMode {
      FORWARD,
@@ -33,9 +32,8 @@
  
  class MotorController {
  public:
-     MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float defaultLinearGain = 0.05f);
+     MotorController(UART_HandleTypeDef* controlUart, UART_HandleTypeDef* screenUart, float torqueConstant);
  
-     void setDirection(DirectionMode dir);
      void stop(float rampRate = 6.0f);
  
      void setTorque(float torque, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
@@ -45,15 +43,20 @@
      float getTorque();
      float getDutyCycle();
      float getPower();
+     ControlMode getControlMode();
      void setPowerConcentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
      void setPowerEccentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
      void setLinear(float gain, float cadence);
- 
+     void update(float measured_cadence);  // à appeler à chaque boucle, ex: toutes les 100ms
+
+     void setDirection(DirectionMode dir);
      void setControlMode(ControlMode mode);
      void setInstruction(float value);
      void setLinearGain(float gain);
+     void setrampRate(float rampRate);
      void settorqueConstant(float torque);
-     void update(float measured_cadence);  // à appeler à chaque boucle, ex: toutes les 100ms
+
+
      void updateFromScreen();
      void updateScreen();
  
@@ -65,7 +68,7 @@
      ControlMode controlMode;
      float instruction; //la valeur cible que l’on veut imposer au moteur, en fonction du mode actif.
      float linearGain;  //Pour le mode linéaire
-     float torqueConstant;  // Nm/A
+     //float torqueConstant;  // Nm/A
      float lastAppliedCurrent;
      float ramp;
 
@@ -74,6 +77,7 @@
  
      ScreenDisplay* screen;
      VESCInterface* vesc;
+     MotorComputations computations;
  
      float applyDirection(float value);
  };
