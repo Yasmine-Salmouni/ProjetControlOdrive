@@ -43,6 +43,7 @@
      float getTorque();
      float getDutyCycle();
      float getPower();
+     float getGain();
      ControlMode getControlMode();
      void setPowerConcentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate
      void setPowerEccentric(float power, float rampRate = 6.0f); //réecrire la fonction pour respecter le ramprate

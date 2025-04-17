@@ -38,23 +38,39 @@
  // --- Fonctions spécifiques de haut niveau ---
  
  void ScreenDisplay::showCadence(float rpm) {
-     sendValue("cad", rpm);  // champ texte nommé "cad"
+     sendValue("cad_val", rpm);  // champ texte nommé "cad"
  }
  
  void ScreenDisplay::showTorque(float torque) {
-     sendValue("tor", torque);  // champ texte nommé "tor"
+     sendValue("tor_val", torque);  // champ texte nommé "tor"
  }
  
  void ScreenDisplay::showPower(float power) {
-     sendValue("pow", power);  // champ texte nommé "pow"
+     sendValue("pow_val", power);  // champ texte nommé "pow"
  }
  
  void ScreenDisplay::showMode(const char* modeName) {
-     sendText("mode", modeName);  // champ texte nommé "mode"
+     sendText("mode_show", modeName);  // champ texte nommé "mode"
  }
 
+ void ScreenDisplay::showMode(ControlMode mode) {
+    const char* modeStr = "Inconnu";
+
+    switch (mode) {
+        case ControlMode::CADENCE:           modeStr = "Cadence"; break;
+        case ControlMode::TORQUE:            modeStr = "Couple"; break;
+        case ControlMode::POWER_CONCENTRIC:  modeStr = "POWER_CONCENTRIC"; break;
+        case ControlMode::POWER_ECCENTRIC:   modeStr = "POWER_ECCENTRIC"; break;
+        case ControlMode::LINEAR:            modeStr = "Lineaire"; break;
+        default: break;
+    }
+
+    showMode(modeStr);  // ← Appelle ta version existante
+}
+
+
  void ScreenDisplay::showGain(float LinearGain) {
-    sendValue("gain", LinearGain);  // champ texte nommé "gain"
+    sendValue("gain_val", LinearGain);  // champ texte nommé "gain"
 }
  
  void ScreenDisplay::showError(const char* message) {
@@ -126,7 +142,7 @@ float ScreenDisplay::getUserLinearGain() {
     sendCommand("get gain.val");  // Demande à l’écran la valeur du champ gain
     int32_t value = readInt32();  // Lit la réponse binaire (format Nextion)
 
-    return static_cast<float>(value);  // Conversionenfloat
+    return static_cast<float>(value) / 100.0f;  // Conversionenfloat
 }
 
 void ScreenDisplay::showDutyCycle(float duty) {
@@ -135,6 +151,11 @@ void ScreenDisplay::showDutyCycle(float duty) {
 
     // Affiche sur un champ texte appelé "duty"
     sendValue("duty", percent, "%.1f");
+}
+
+void ScreenDisplay::showDirection(DirectionMode dir) {
+    const char* label = (dir_show == DirectionMode::REVERSE) ? "REVERSE" : "FORWARD";
+    sendText("dir_show", label);
 }
 
 bool ScreenDisplay::getStop() {
@@ -156,3 +177,13 @@ bool ScreenDisplay::getCalibrateRequest() {
     return (value == 1);  // 1 = pressé
     //configurer calib_state aussi
 }
+
+void ScreenDisplay::showCalibrationStatus(bool success) {
+    if (success) {
+        sendText("calib_stat", "Calibration OK");
+    } else {
+        sendText("calib_stat", "Erreur calibration");
+    }
+}
+
+

@@ -155,7 +155,10 @@ ControlMode MotorController::getControlMode() {
     return controlMode;
 }
 
- 
+float MotorController::getGain() {
+    return linearGain;
+}
+
  void MotorController::setPowerConcentric(float power, float rampRate)
  {
     float cadence = getCadence();  // Lecture de la vitesse réelle
@@ -334,7 +337,7 @@ void MotorController::updateFromScreen()
     {
         stop(3.0f);  // Stop progressif avec rampRate = 3 A/s (à adapter si besoin)
     }
-    
+
     if (screen->getCalibrateRequest()) 
     {
         calibrateTorqueConstant();
@@ -350,13 +353,19 @@ void MotorController::updateScreen() {
     float power   = getPower();
     float dutyCycle = getDutyCycle();
     ControlMode mode = getControlMode();
+    float LinearGain = getGain();
+    DirectionMode direction = getDirection();
+    
 
     // Affichage à l’écran
+    screen->showWelcome();
     screen->showCadence(rpm);
     screen->showTorque(torque);
     screen->showPower(power);
     screen->showDutyCycle(dutyCycle);
     screen->showMode(mode);
+    screen->showGain(LinearGain);
+    screen->showDirection(direction);
 }
 
 void MotorController::calibrateTorqueConstant() {
@@ -375,7 +384,15 @@ void MotorController::calibrateTorqueConstant() {
     }
 
     float newKt = measuredTorque / testCurrent; //simple calcule a partir des valeurs mesurées
-    settorqueConstant(newKt);  
 
-    screen->sendValue("calib_stat", newKt, "Kt=%.3f Nm/A"); //configurer calib_stat
+    if (newKt > 0.01f && newKt < 1.0f) { //documentation
+        screen->showCalibrationStatus(true);  // ✅ calibration OK
+        setTorqueConstant(newKt);
+    } else {
+        screen->showCalibrationStatus(false); // ❌ calibration échouée
+    }
 }
+
+/*On donne 1.95A au moteur, il fournit 0.39 Nm,
+ce qui devient 15 Nm au pédalier via le réducteur.
+On n'a pas à tenir compte de la réduction dans le code*/

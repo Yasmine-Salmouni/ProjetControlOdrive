@@ -29,8 +29,10 @@
      void showTorque(float torque);
      void showPower(float power);
      void showMode(const char* modeName);
+     void showMode(ControlMode mode);
      void showGain(float LinearGain);
      void showDutyCycle(float duty);
+     void showDirection(DirectionMode dir)
  
      // Affichage de messages statiques
      void showError(const char* message);

@@ -12,13 +12,14 @@
 
  class MotorComputations {
     public:
-        MotorComputations(); 
+        MotorComputations(float torqueConstant = 0.05f); 
     
         float computeTorqueFromCurrent(float current) const;
         float computeCurrentFromTorque(float torque) const;
     
         float computePower(float torque, float cadence_rpm) const;
         float computeOmega(float cadence_rpm) const;
+        void setTorqueConstant(float value);
     
     private:
         float torqueConstant;  // en Nm/A
