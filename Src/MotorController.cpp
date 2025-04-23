@@ -299,6 +299,9 @@ void MotorController::updateFromScreen()
     ControlMode selectedMode = screen->getMode();
     setControlMode(selectedMode);
 
+    float ramprate = screen->getRampRate();
+    setrampRate(ramprate);
+
     switch (controlMode)
     {
         case ControlMode::CADENCE:
@@ -327,6 +330,7 @@ void MotorController::updateFromScreen()
         {
             float gain = screen->getUserLinearGain();  
             setLinearGain(gain);
+            setInstruction(gain);
             break;
         }
 
@@ -358,7 +362,7 @@ void MotorController::updateScreen() {
     
 
     // Affichage à l’écran
-    screen->showWelcome();
+    //screen->showWelcome();
     screen->showCadence(rpm);
     screen->showTorque(torque);
     screen->showPower(power);
@@ -396,3 +400,9 @@ void MotorController::calibrateTorqueConstant() {
 /*On donne 1.95A au moteur, il fournit 0.39 Nm,
 ce qui devient 15 Nm au pédalier via le réducteur.
 On n'a pas à tenir compte de la réduction dans le code*/
+
+UART_HandleTypeDef* MotorController::getscreen()
+{
+    return screen_uart;
+}
+

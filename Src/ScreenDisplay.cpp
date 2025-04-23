@@ -178,6 +178,14 @@ bool ScreenDisplay::getCalibrateRequest() {
     //configurer calib_state aussi
 }
 
+float ScreenDisplay::getRampRate()
+{
+    sendCommand("get ramp.val"); 
+    int32_t value = readInt32();  // Lit la réponse binaire (format Nextion)
+
+    return static_cast<float>(value);
+}
+
 void ScreenDisplay::showCalibrationStatus(bool success) {
     if (success) {
         sendText("calib_stat", "Calibration OK");

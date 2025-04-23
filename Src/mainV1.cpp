@@ -22,9 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "MotorController.hpp"
-#include "VESCInterface.hpp"
-#include "ScreenDisplay.hpp"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,9 +53,12 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+// Pointeur vers le contrôleur moteur
 MotorController* motor = nullptr;
-char debugMessage[64];  // Taille à ajuster selon besoin
-volatile int count;
+
+// Constante de couple initiale
+float initialTorqueConstant = 0.05f;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,68 +118,17 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_IWDG_Refresh(&hiwdg);
+  HAL_IWDG_Refresh(&hiwdg);
 
-   // Création du contrôleur moteur : USART3 = ODrive, USART2 = Ecran
-   float torqueConstant = 0.45f; // Ajuste selon ton moteur
-   motor = new MotorController(&huart3, &huart2, torqueConstant);
-   motor->calibrateTorqueConstant();
+  //Création du contrôleur moteur : USART3 = VESC, USART2 = Ecran
+  motor = new MotorController(&huart3, &huart2, initialTorqueConstant);
+  motor->calibrateTorqueConstant();
+  HAL_Delay(500);
 
-   // Direction par défaut
-   motor->setDirection(DirectionMode::FORWARD);
-   // --- Test 1 : Cadence control ---
-	 motor->stop();  // Reset speed
-	 motor->setControlMode(ControlMode::CADENCE);
-	 motor->setInstruction(60.0f);  // 60 tr/min
-	 snprintf(debugMessage, sizeof(debugMessage), "Mode: Cadence");
-	 HAL_Delay(500);
-	 count=1;
-
-	 // --- Test 2 : Torque control ---
-	 motor->setControlMode(ControlMode::TORQUE);
-	 motor->setInstruction(2.0f);  // 2 Nm
-
-	 snprintf(debugMessage, sizeof(debugMessage), "Mode: Torque");
-	 HAL_Delay(500);
-	 count=2;
-
-	 // --- Test 3 : Power concentrique ---
-	 motor->setControlMode(ControlMode::POWER_CONCENTRIC);
-	 motor->setInstruction(100.0f);  // 100 W
-
-	 snprintf(debugMessage, sizeof(debugMessage), "Mode: Powerr");
-	 HAL_Delay(500);
-	 count=3;
-
-	 // --- Test 4 : Power excentrique ---
-	 motor->setControlMode(ControlMode::POWER_ECCENTRIC);
-	 motor->setInstruction(100.0f);  // 100 W
-
-	 snprintf(debugMessage, sizeof(debugMessage), "Mode: Power");
-	 HAL_Delay(500);
-	 count=4;
-
-	 // --- Test 5 : Linear mode ---
-	 motor->setControlMode(ControlMode::LINEAR);
-	 motor->setInstruction(0.05f);  // 0.05 Nm/tr/min
-
-	 snprintf(debugMessage, sizeof(debugMessage), "Mode: Linear");
-
-	 // Mise à jour en boucle pendant quelques secondes
-	 for (int i = 0; i < 25; i++) {
-		 float cadence = motor->getCadence();
-		 if (cadence >= 0.0f) {
-			 motor->update(cadence);
-		 }
-		 HAL_Delay(20);
-	 }
-	 count=5;
-
-	 // --- Fin du test : arrêt du moteur ---
-	 motor->stop();  // Stop
-
-	 snprintf(debugMessage, sizeof(debugMessage), "Test terminé");
-
+  // Afficher les valeurs initiales
+  motor->updateScreen();  
+  HAL_Delay(100);
+  motor->getScreen()->showWelcome();
 
   /* USER CODE END 2 */
 
@@ -186,8 +136,22 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_IWDG_Refresh(&hiwdg);  // Rafraîchit le Watchdog
 
-	 HAL_IWDG_Refresh(&hiwdg);  // Rafraîchit le Watchdog
+    // Met à jour les paramètres utilisateur (mode, direction, stop, etc.)
+    motor->updateFromScreen();
+
+    // Lecture de la cadence actuelle (depuis VESC)
+    float cadence = motor->getCadence();
+
+    // Mise à jour dynamique du moteur (mode LINEAR si actif)
+    motor->update(cadence);
+
+    // Affiche les valeurs sur l'écran (couple, duty, etc.)
+    motor->updateScreen();
+
+    HAL_Delay(100);  // rafraîchissement toutes les 100 ms
+
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
